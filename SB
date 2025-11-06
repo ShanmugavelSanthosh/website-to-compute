@@ -1,0 +1,43 @@
+import OpenAI from "openai";  // Import OpenAI API client
+
+export default async (req: Request) => {
+  // Ensure the request method is POST
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  try {
+    // Parse the incoming JSON request body to get the description
+    const { description } = await req.json();
+
+    // Validate the 'description' field is present in the request
+    if (!description) {
+      return new Response("Missing description", { status: 400 });
+    }
+
+    // Initialize the OpenAI client
+    const client = new OpenAI();
+
+    // Call OpenAI API to generate concise alt text for the description
+    const res = await client.responses.create({
+      model: "gpt-5-mini",  // Use the GPT-5 mini model (adjust as needed)
+      input: [
+        { role: "user", content: `Write concise alt text for: ${description}` }
+      ]
+    });
+
+    // Return the generated alt text as a JSON response
+    return new Response(JSON.stringify({ altText: res.output_text }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    // Catch any errors and return a server error response
+    console.error(error);  // Log error for debugging
+    return new Response("Server error", { status: 500 });
+  }
+};
+
+// API configuration specifying the endpoint path
+export const config = {
+  path: "/api/alt-text",
+};
